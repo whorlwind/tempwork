@@ -1,0 +1,69 @@
+<html lang="en">
+<head>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+    <title>Slide Lablr</title>
+</head>
+<body>
+
+<form action='/' method = post class =index>
+<h1>Welcome to the Slide Database:</h1>
+<h2>What would you like to do?</h2>
+<table>
+<input type="hidden" name="doaction[]" value="null" />
+<tr>
+<td>Print  <input type="text" size="8" maxlength="8" class="inputbox" name="number" value=""/>  labels</td>
+<td> <input type="submit" class ="buttons" name="submit" value="Print"/></td>
+</tr>
+<tr>
+ 
+</tr>
+<tr>
+</table>
+<a href="addnew"><input type ="button" value="Add new slide(s)"/></a>
+</tr>
+{% for item in data%}
+<tr>
+
+<td>{{item[2]}}</td>
+<td>{{item[1]}}</td>
+</tr>
+{% endfor %}
+
+
+</form>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript">
+<!-- $('#printall').click(function(){
+    
+    $('.labels').prop("checked", !$('.labels').prop("checked"));
+});
+$('#deleteall').click(function(){
+    
+    $('.deletion').prop("checked", !$('.deletion').prop("checked"));
+});
+-->
+
+</script>
+</body>
+</html>
+    
+

@@ -1,0 +1,89 @@
+<html lang="en">
+<head>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+    <title>Slide Lablr</title>
+</head>
+<body>
+
+<form action='/addnew' method = post class =addnew>
+<h1>Welcome to the Slide Database:</h1>
+<h3>What would you like to do?</h3>
+<input type ="submit" class ="buttons" name="submit" value="Return"/>
+<table>
+<tr>
+
+{%if session['showimage'] == True%}
+
+<td><img src="static/images/{{session['sessionid']}}.jpg?{{time.time()}}" alt=""></td>
+
+
+{%else%}
+
+{%endif%}
+</tr>
+<tr>
+    <td> <input type="submit" class ="buttons" name="submit" 
+            value="Get Slide Image"/></td>
+
+
+    <td> <input type="submit" class ="buttons" name="submit" value="Scan Barcode"/>
+    or enter uid manually:
+</td>
+    <td><input type="text" class = "textbox" name="uidentry" value="{{session['uid']}}"</td>
+</tr>
+</table>
+<p></p>
+
+
+<h4><i>Optional:</i> Enter Slide info </h4>
+    
+<table>
+<tr>
+    <td><b>Cell Type: </b> <input type="text" class = "textbox" name="celltype" value="{{session['cell']}}"/></td>
+    <td><b>Stain Type: </b><input type="text" class = "textbox" name="staintype" value="{{session['stain']}}"/></td>
+</tr>
+<tr>
+    <td><b>Patient Identity: </b><input type="text" class = "textbox" name="patient" value="{{session['patient']}}"/></td>
+    
+</tr>
+
+
+
+</table>
+
+<table>
+{%if session['exist']%}
+<h3> Warning, entry with that uid already exists with the following data:
+
+
+<tr>
+    <td>Cell Type: <input type="text" class = "textbox" name="existcelltype" value="{{session['existcell']}}"  disabled /></td>
+    <td>Stain Type: <input type="text" class = "textbox" name="existstaintype" value="{{session['existstain']}}" disabled /></td>
+</tr>
+<tr>
+    <td>Patient Identity: <input type="text" class = "textbox" name="existpatient" value="{{session['existpatient']}}" disabled /></td>
+    
+</tr>
+<tr><td><b>Confirm Overwrite: </b> <input type="checkbox" class="checks" name="confirm"/></td>
+</tr>
+{%endif%}
+
+    <td><input  type="submit" class = "buttons" name="submit" value="Add Slide"/></td>
+</tr>
+
+
+
+
+
+</form>
+<script type="text/javascript">
+$(document).keypress(function(e){
+    if (e.which ==13) {}  
+});
+
+
+
+</script>
+
+
