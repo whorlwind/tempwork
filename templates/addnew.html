@@ -25,27 +25,61 @@
 <tr>
     <td> <input type="submit" class ="buttons" name="submit" 
             value="Get Slide Image"/></td>
-
-
+</tr>
+<tr>
     <td> <input type="submit" class ="buttons" name="submit" value="Scan Barcode"/>
+    <td> <input type="submit" class ="buttons" id = "create" name="submit" value="Create Barcode"/>
     or enter uid manually:
 </td>
-    <td><input type="text" class = "textbox" name="uidentry" value="{{session['uid']}}"</td>
+    <td><input type="text" class = "textbox" name="uid" value="{{session['uid']}}"/></td>
 </tr>
 </table>
 <p></p>
 
+<input hidden type ="text" name="uid_time" value="{{session['uid_time']}}"</td>
 
 <h4><i>Optional:</i> Enter Slide info </h4>
     
 <table>
 <tr>
-    <td><b>Cell Type: </b> <input type="text" class = "textbox" name="celltype" value="{{session['cell']}}"/></td>
-    <td><b>Stain Type: </b><input type="text" class = "textbox" name="staintype" value="{{session['stain']}}"/></td>
+    <td><b>Patient Identity: </b> <input type="text" class = "textbox" name="patient" value="{{session['patient']}}"/></td>
+    <td><b>Stain Type: </b><select class="dropdown" name="stain" id="stain">
+    <option value="1">Acridine orange</option>
+    <option value="2"> Bismarck brown</option>
+    <option value="3"> Carmine</option>
+    <option value="4"> Coomassie blue</option>
+    <option value="5"> Cresyl violet</option>
+    <option value="6"> Crystal violet</option>
+    <option value="7"> DAPI</option>
+    <option value="8"> Eosin</option>
+    <option value="9"> Ethidium bromide</option>
+    <option value="10"> Acid fuchsine</option>
+    <option value="11"> Hematoxylin</option>
+    <option value="12"> Hoechst Stains</option>
+    <option value="13"> Iodine</option>
+    <option value="14"> Malachite green</option>
+    <option value="15"> Methyl green</option>
+    <option value="16"> Methylene blue</option>
+    <option value="17"> Neutral red</option>
+    <option value="18"> Nile blue</option>
+    <option value="19"> Nile red</option>
+    <option value="20"> Osmium tetroxide</option>
+    <option value="21"> Rhodamine</option>
+    <option value="22"> Safranin</option>
+    <option value="23"> Other</option>
+    </select>
+    <b><div hidden id="otherstaindiv">Stain: </b><input type="text" class = "textbox" name="stain_other" value="{{session['stain_other']}}"/></td>
+</div>
+<td><b>Anatomical Region: </b><input type="text" class = "textbox" name="region_id" value="{{session['region_id']}}"/></td>
 </tr>
 <tr>
-    <td><b>Patient Identity: </b><input type="text" class = "textbox" name="patient" value="{{session['patient']}}"/></td>
     
+    <td><b>Section Series number: </b><input type="text" class = "textbox" name="section_series_id" value="{{session['section_series_id']}}"/></td>
+    <td><b>Experiment ID number: </b><input type="text" class = "textbox" name="expt_id" value="{{session['expt_id']}}"/></td>
+</tr>
+<tr>
+    <td><b>Other Notes: </b><input type="text" class = "textbox" name="notes" value="{{session['notes']}}"/></td>
+
 </tr>
 
 
@@ -58,18 +92,30 @@
 
 
 <tr>
-    <td>Cell Type: <input type="text" class = "textbox" name="existcelltype" value="{{session['existcell']}}"  disabled /></td>
-    <td>Stain Type: <input type="text" class = "textbox" name="existstaintype" value="{{session['existstain']}}" disabled /></td>
+    <td><b>Patient Identity: </b> <input type="text" class = "textbox" name="existpatient" value="{{session['patientexist']}}"disabled/></td>
+    <td><b>Stain Type: </b><input type="text" class = "textbox" name="existstain" value="{{session['stainexist']}}"disabled/></td>
 </tr>
 <tr>
-    <td>Patient Identity: <input type="text" class = "textbox" name="existpatient" value="{{session['existpatient']}}" disabled /></td>
-    
+    <td><b>Anatomical Region: </b><input type="text" class = "textbox" name="existregion_id" value="{{session['region_idexist']}}"disabled/></td>
+    <td><b>Section Series number: </b><input type="text" class = "textbox" name="existsection_series_id" value="{{session['section_series_idexist']}}"disabled/></td>
+    <td><b>Experiment ID number: </b><input type="text" class = "textbox" name="existexpt_id" value="{{session['expt_idexist']}}"disabled/></td>
 </tr>
+<tr>
+    <td><b>Other Notes: </b><input type="text" class = "textbox" name="existnotes" value="{{session['notesexist']}}"disabled/></td>
+
 <tr><td><b>Confirm Overwrite: </b> <input type="checkbox" class="checks" name="confirm"/></td>
 </tr>
 {%endif%}
-
+<tr> 
+{%if session['keepinfo']==True%}
+    <td><input type ="checkbox" name="keepinfo" checked/></a> Keep current data for series</td>
+{%else%}
+    <td><input type ="checkbox" name="keepinfo"/></a> Keep current data for series</td>
+{%endif%}
+</tr>
+<tr>
     <td><input  type="submit" class = "buttons" name="submit" value="Add Slide"/></td>
+
 </tr>
 
 
@@ -78,10 +124,23 @@
 
 </form>
 <script type="text/javascript">
-$(document).keypress(function(e){
-    if (e.which ==13) {}  
-});
+$(document).ready(function(){
+    $(document).keypress(function(e){
+        if (e.which ==13) {}  
+    });
+    $("#stain").val({{session['stain']}});
+    if ($("#stain").val()==23){$("#otherstaindiv").show();}
+    $("#stain").change(function(){
+        if ($("#stain").val()==23){$("#otherstaindiv").show();}
+        else {$("#otherstaindiv").hide();}        
+        
+    });
+    $("#create").click(function(){
+        window.location.reload()
+    });
 
+
+});
 
 
 </script>

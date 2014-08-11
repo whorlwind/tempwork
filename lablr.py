@@ -51,20 +51,19 @@ def index():
                     
                
 def adduids(number):
-    #connect to mysql uid database, get last uid, add new uids
-    sqlsession=sessionmaker(bind=engine)()
-    cursor=engine.connect()
-    metadata=MetaData(engine)
-    uids=Table('uid_db',metadata,autoload=True)
-    lastuid=sqlsession.query(uids).order_by('-uid').first()
-    lastuid=int(lastuid[0])
-    numbertoadd=number
-    newuids=tuple(range(lastuid+1,lastuid+numbertoadd+1))
-    for item in newuids:
-        ins=uids.insert().values(uid=item)
-        cursor.execute(ins)   
-    sqlsession.commit()
-    return newuids
+    #connect to redcap database, get last uid, add new uid
+    
+    newuids=list()
+    for i in range(number):
+        uids=project.export_records(fields=['uid'])
+        lastuid=int(uids[-1]['uid'])    
+        newuid=str(lastuid+1)
+        now=time.strftime('%Y-%m-%d %H:%M')
+        added=int(project.import_records([{'uid':newuid,'uid_time':now}],
+                                          return_content='ids')[0])
+        newuids.append(added)
+        project.export_records()
+    return tuple(newuids)
     
 def printlabels(uids):  
     #draw qr codes for uids to pdf file
@@ -94,19 +93,18 @@ def addnew():
     if request.method=='GET': 
         session['showbarcode']=False
         session['showimage']=False
-        session['uid']=" "
         session['sessionid']=random.randint(1000000,99000000)
         session['imagepath']="static/images/"+str(session['sessionid'])+".jpg"
+        
         return render_template('addnew.html',session=session)
     if request.method=='POST':
-        
-        action=request.form['submit']
-        session['uid']=request.form['uidentry']
-        session['cell']=request.form['celltype']
-        session['stain']=request.form['staintype']
-        session['patient']=request.form['patient']
+        action=request.form['submit'] 
+        for field in project.field_names:
+            if field != 'slide_image':
+                session[field]=request.form[field]
+               
         if action=='Get Slide Image':
-            i=Image("http://10.10.0.25:8080/photoaf.jpg").getPIL()
+            i=Image("http://192.168.150.10:8080/photoaf.jpg").getPIL()
             label=i.crop((930,290,1130,490))
             label=label.rotate(180)
             
@@ -114,7 +112,7 @@ def addnew():
             session['showimage']=True
             return render_template('addnew.html',session=session)
         if action=='Scan Barcode':
-            bar=Image("http://10.10.0.25:8080/photoaf.jpg").getPIL().convert('L')
+            bar=Image("http://192.168.150.10:8080/photoaf.jpg").getPIL().convert('L')
             scanner = zbar.ImageScanner()
             scanner.parse_config('enable')
             width,height=bar.size
@@ -126,33 +124,44 @@ def addnew():
             else:
                 session['uid']="unrecognized, try again"   
             return render_template('addnew.html',session=session)
+        if action=='Create Barcode':
+            uid=adduids(1)
+            print uid[0]
+            printlabels(uid)
+            session['uid']=uid[0]
+            return app.send_static_file('barcodes.pdf')
         if action=='Add Slide':
            
-            if session['cell'] and session['stain'] and session['patient']:
-                complete=1
-            else:
-                complete=0
+#            if session['cell'] and session['stain'] and session['patient']:
+#                complete=1
+#            else:
+#                complete=0
+            record={}
+            for field in project.field_names:
+                if field != 'slide_image':
+                    record[field]=session[field]
+            record['slide_info_complete']=1
             
-            record = {'uid': session['uid'] ,'cell': session['cell'], 
-                      'stain': session['stain'],'patient': session['patient'],
-                      'my_first_instrument_complete':complete}
-            
-            testforexist=project.export_records(records=[session['uid']])
-            print request.form.get('confirm')
+            testforexist=project.export_records(records=[session['uid']],raw_or_label='label')
             if testforexist and (request.form.get('confirm') == None):
+                current=testforexist[0]
                 session['exist']=True
-                session['existpatient']=str(testforexist[0].get('patient'))
-                session['existstain']=str(testforexist[0].get('stain'))
-                session['existcell']=str(testforexist[0].get('cell'))
-                #! do something to catch uid already in use !
+                for field in project.field_names:
+                    if field != 'slide_image':
+                        session[field+'exist']=current[field]
+                if current['stain']=='Other':
+                    session['stainexist']=current['stain_other']
                 return render_template('addnew.html',session=session)
             uid=project.import_records([record],return_content='ids')[0]
             with open(session['imagepath'],'rb') as fobj:
                 project.import_file(uid,'slide_image','slide_image.jpg',fobj)
             if os.path.isfile(session['imagepath']):
                 os.remove(session['imagepath'])
-                  
-            session.clear()
+            if request.form.get('keepinfo') == 'on':
+                session['keepinfo']=True
+                session['exist']=False
+            else:
+                session.clear()
             return redirect('/addnew')
         if action=='Return':
                
