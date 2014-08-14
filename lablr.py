@@ -18,15 +18,15 @@ import zbar
 import creds
 import random
 import urllib2
+import shutil
 #create redcap connection
 project = Project(creds.rcp_url,creds.rcp_key)
-
-
+session_records={}
+phone_ip='192.168.99.209'
 app=Flask(__name__)
 app.debug=True
 Bootstrap(app)
 engine=create_engine(creds.mysql_url)
-
 #allows timestamp to be added to images, forces browser reload
 app.jinja_env.globals.update(time=time)
 
@@ -104,7 +104,7 @@ def addnew():
                 session[field]=request.form[field]
                
         if action=='Get Slide Image':
-            i=Image("http://192.168.150.10:8080/photoaf.jpg").getPIL()
+            i=Image(("http://"+phone_ip+":8080//photoaf.jpg")).getPIL()
             label=i.crop((930,290,1130,490))
             label=label.rotate(180)
             
@@ -112,7 +112,7 @@ def addnew():
             session['showimage']=True
             return render_template('addnew.html',session=session)
         if action=='Scan Barcode':
-            bar=Image("http://192.168.150.10:8080/photoaf.jpg").getPIL().convert('L')
+            bar=Image(("http://"+phone_ip+":8080/photoaf.jpg")).getPIL().convert('L')
             scanner = zbar.ImageScanner()
             scanner.parse_config('enable')
             width,height=bar.size
@@ -124,11 +124,12 @@ def addnew():
             else:
                 session['uid']="unrecognized, try again"   
             return render_template('addnew.html',session=session)
-        if action=='Create Barcode':
+        if action=='Create UID':
             uid=adduids(1)
-            print uid[0]
-            printlabels(uid)
             session['uid']=uid[0]
+            return render_template('addnew.html',session=session)
+        if action=='Download Barcode':
+            printlabels([session['uid'],])
             return app.send_static_file('barcodes.pdf')
         if action=='Add Slide':
            
@@ -143,7 +144,7 @@ def addnew():
             record['slide_info_complete']=1
             
             testforexist=project.export_records(records=[session['uid']],raw_or_label='label')
-            if testforexist and (request.form.get('confirm') == None):
+            if (testforexist[0].get('slide_info_complete')!='Incomplete') and (request.form.get('confirm') == None):
                 current=testforexist[0]
                 session['exist']=True
                 for field in project.field_names:
@@ -155,8 +156,10 @@ def addnew():
             uid=project.import_records([record],return_content='ids')[0]
             with open(session['imagepath'],'rb') as fobj:
                 project.import_file(uid,'slide_image','slide_image.jpg',fobj)
-            if os.path.isfile(session['imagepath']):
+            try:
                 os.remove(session['imagepath'])
+            except:
+                pass
             if request.form.get('keepinfo') == 'on':
                 session['keepinfo']=True
                 session['exist']=False
@@ -164,14 +167,54 @@ def addnew():
                 session.clear()
             return redirect('/addnew')
         if action=='Return':
-               
+            try:
+                os.remove(session['imagepath'])
+            except:
+                pass   
             session.clear()
             return redirect(url_for('index'))
-            
-        
-    
+
+@app.route('/browse',methods=['GET','POST'])
+def browse():    
+    session_records={} 
+    if request.method=='GET': 
+        session['sessionid']=random.randint(1000000,99000000)
+        session['imagepath']="static/images/"+str(session['sessionid'])+"/"
+        os.mkdir(str(session['imagepath']))
+        return render_template('browse.html',session=session)
+    if request.method=='POST':
+        action=request.form['submit'] 
+        session_records[str(session['sessionid'])]=project.export_records(raw_or_label='raw')
+        if action=='Display Unverified':
+            display_records=list([])
+            for slide in session_records[str(session['sessionid'])]:
+                if slide['slide_info_complete']=='1':
+                    picture_data,headers=project.export_file(record=slide['uid'],field='slide_image')
+                    with open(str(session['imagepath']+slide['uid']+".jpg"),'w+') as f:
+                        f.write(picture_data)
+                    display_records.append(slide)
+            return render_template('browse.html',session=session,display_records=display_records)
+        if action=='Commit Changes':
+            verified_records=request.form.getlist('verified_records[]')
+            changed_records=list()
+            for record in verified_records:
+                changedrecord={}
+                for field in project.field_names:
+                    if (field != 'slide_image') and (field != 'uid_time'):
+                        changedrecord[field]=request.form[field+'_'+record]
+                changed_records.append(changedrecord)
+            project.import_records(changed_records)
+            return render_template('browse.html',session=session)
+        if action=='Return':
+            try:
+                shutil.rmtree(session['imagepath'])
+            except OSError:
+                pass   
+            session.clear()
+            return redirect(url_for('index'))
+
 app.secret_key=creds.flask_key
 if __name__=='__main__':
-    app.run()
+    app.run(host='170.140.61.50')
 
 

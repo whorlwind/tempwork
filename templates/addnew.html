@@ -8,7 +8,6 @@
 
 <form action='/addnew' method = post class =addnew>
 <h1>Welcome to the Slide Database:</h1>
-<h3>What would you like to do?</h3>
 <input type ="submit" class ="buttons" name="submit" value="Return"/>
 <table>
 <tr>
@@ -27,11 +26,16 @@
             value="Get Slide Image"/></td>
 </tr>
 <tr>
-    <td> <input type="submit" class ="buttons" name="submit" value="Scan Barcode"/>
-    <td> <input type="submit" class ="buttons" id = "create" name="submit" value="Create Barcode"/>
-    or enter uid manually:
+    <td> <input type="submit" class ="buttons" name="submit" value="Scan Barcode"/>for UID </td>
+</tr>
+<tr>
+    <td> <input type="submit" class ="buttons" id = "create" name="submit" value="Create UID"/>
+    or enter UID manually:
 </td>
-    <td><input type="text" class = "textbox" name="uid" value="{{session['uid']}}"/></td>
+    <td><center>UID</center><div><input type="text" class = "textbox" name="uid" value="{{session['uid']}}"/></div></td>
+</tr>
+<tr>
+    <td><input type="submit" class ="buttons" id = "create" name="submit" value="Download Barcode"/></td>
 </tr>
 </table>
 <p></p>
@@ -44,6 +48,7 @@
 <tr>
     <td><b>Patient Identity: </b> <input type="text" class = "textbox" name="patient" value="{{session['patient']}}"/></td>
     <td><b>Stain Type: </b><select class="dropdown" name="stain" id="stain">
+    <option value="" selected>--Select--</option>
     <option value="1">Acridine orange</option>
     <option value="2"> Bismarck brown</option>
     <option value="3"> Carmine</option>
